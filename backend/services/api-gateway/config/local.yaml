@@ -1,0 +1,20 @@
+env: "local" #prod , dev
+database_connection_url: "postgres://postgres:pingvin@localhost:5432/myhelp?sslmode=disable"
+http_server:
+  address: "localhost:8082"
+  timeout: 4s
+  idle_timeout: 30s
+
+
+jwt:
+  access_secret_key: "?TXni3GIH1BLBkrALq3IgN?fST5-NoLnPsJWrAiLAgyfZPWA01mi26!uv7oYBVGNI4o02S3VGiHxvKeWBsBF8FezEE-rE9rhRvIChP7usxtklAKLYf1Zjs4h3LRf2qdvjLnPUHh!ClsITt/yaJ=R9VbE6hA4kkm-1PVqxQHDzsb3vF-aGndl9-qTPPG9/sfGcYw?I9Y?cJXglJxnP1Dw=k3L055ip5Gdl5dD0m8omEIkeRex32NSkPG0D8yxofG-"
+  expire_access: 30m
+  expire_refresh: 24h
+  refresh_secret_key: "2OftbBo?n0!6w9S09r-PMUe8Qf9VoL9yfZ2JhswWElxx2MBihNS0edL8oV??IRO/qKSsTrxGKisRMO/6xGZvJMDRIr-1w5Ybjg8YFXJ/x79d/OU=VKTC/G/kKdGFcLbl5jncVty1L71KuHpzz3k6nxv=7UJVk2SXoirI?s630Vz3oZgv5tuBF6ZjG1akSPdPoAW9NWm6tunwQjTs4YUts1QT79/c6wqu69QEIM!R/DI7Tf!w0!4uxw/lmVXF-lAi"
+
+services:
+  appointment_service: "http://localhost:8081"
+  account_service: "http://localhost:8083"
+  polyclinic_service: "http://localhost:8084"
+
+
