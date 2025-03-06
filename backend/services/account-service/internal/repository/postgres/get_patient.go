@@ -34,18 +34,20 @@ func (s *Storage) Close() error {
 
 func (s *Storage) GetPatientById(patientID int) (domain.Patient, error) {
 	query := `
-		SELECT id, surname, name, patronymic, email, polic
+		SELECT id, surname, name, patronymic, email, polic, is_deleted
 		FROM patients 
 		WHERE id=$1
 `
 	var patient domain.Patient
+	var surname, name, patronymic sql.NullString
 	err := s.connection.QueryRow(context.Background(), query, patientID).Scan(
 		&patient.Id,
-		&patient.Surname,
-		&patient.Name,
-		&patient.Patronymic,
+		&surname,
+		&name,
+		&patronymic,
 		&patient.Email,
 		&patient.Polic,
+		&patient.IsDeleted,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -54,6 +56,25 @@ func (s *Storage) GetPatientById(patientID int) (domain.Patient, error) {
 		}
 		return domain.Patient{}, errors.Wrapf(err, "failed to get patient with id %d", patientID)
 	}
+
+	if surname.Valid {
+		patient.Surname = surname.String
+	} else {
+		patient.Surname = ""
+	}
+
+	if name.Valid {
+		patient.Name = name.String
+	} else {
+		patient.Name = ""
+	}
+
+	if patronymic.Valid {
+		patient.Patronymic = patronymic.String
+	} else {
+		patient.Patronymic = ""
+	}
+
 	return patient, nil
 }
 

@@ -64,6 +64,7 @@ func GetPatientByIdHandler(logger *slog.Logger, wrapper GetPatientWrapper) func(
 			Patronymic:   patient.Patronymic,
 			Polic:        patient.Polic,
 			Email:        patient.Email,
+			IsDeleted:    patient.IsDeleted,
 			Appointments: formattedAppointments,
 		}
 

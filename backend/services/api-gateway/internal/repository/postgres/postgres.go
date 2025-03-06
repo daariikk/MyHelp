@@ -32,13 +32,18 @@ func (s *Storage) Close() error {
 }
 
 func (s *Storage) RegisterUser(user domain.User) (domain.User, error) {
+	isExistPatient, err := s.CheckUserByEmail(user.Email)
+	if isExistPatient {
+		return domain.User{}, errors.New("User already exists")
+	}
+
 	query := `
 		INSERT INTO patients (name, polic, email, password)
         VALUES ($1, $2, $3, $4)
         RETURNING id
 `
 	var patientId int
-	err := s.connection.QueryRow(context.Background(), query,
+	err = s.connection.QueryRow(context.Background(), query,
 		user.Name,
 		user.Polic,
 		user.Email,
@@ -53,7 +58,7 @@ func (s *Storage) RegisterUser(user domain.User) (domain.User, error) {
 
 func (s *Storage) GetPassword(email string) (int, string, error) {
 	query := `
-	SELECT id, password FROM patients WHERE email=$1
+	SELECT id, password FROM patients WHERE email=$1 and is_deleted=false
 `
 	rows, err := s.connection.Query(context.Background(), query, email)
 	if err != nil {
@@ -91,4 +96,26 @@ func (s *Storage) UpdatePassword(email string, password string) error {
 
 	s.logger.Debug("Successfully updated password", "email", email, "password", password)
 	return nil
+}
+
+func (s *Storage) CheckUserByEmail(email string) (bool, error) {
+	query := `
+	select email
+	from patients
+	where email=$1 and is_deleted=false
+`
+	rows, err := s.connection.Query(context.Background(), query, email)
+	if err != nil {
+		s.logger.Error("Failed to query database", "email", email, "error", err)
+		return false, errors.Wrap(err, "failed to query database: attempt to check user by email")
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		s.logger.Debug("User found", "email", email)
+		return true, nil
+	}
+
+	s.logger.Debug("User not found", "email", email)
+	return false, nil
 }
