@@ -60,6 +60,11 @@ func CreateAppointmentHandler(logger *slog.Logger, wrapper AppointmentWrapper) f
 
 		err = wrapper.NewAppointment(appointment)
 		if err != nil {
+			if err.Error() == "Record is busy" {
+				logger.Error(fmt.Sprintf("Error create appointment: %e", err))
+				response.SendFailureResponse(w, "Record is busy", http.StatusInternalServerError)
+				return
+			}
 			logger.Error(fmt.Sprintf("Error create appointment: %e", err))
 			response.SendFailureResponse(w, "Error create appointment", http.StatusInternalServerError)
 			return
