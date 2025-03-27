@@ -80,6 +80,22 @@ func (s *Storage) GetPatientById(patientID int) (domain.Patient, error) {
 
 func (s *Storage) GetAppointmentByPatientId(patientID int) ([]domain.Appointment, error) {
 	s.logger.Debug("GetAppointmentByPatientId starting...")
+
+	// Сначала обновляем статусы прошедших записей для этого пациента
+	updateQuery := `
+        UPDATE appointments
+        SET status_id = 2  -- ID статуса "завершено"
+        WHERE patient_id = $1
+        AND (date < CURRENT_DATE OR (date = CURRENT_DATE AND time < CURRENT_TIME))
+        AND status_id NOT IN (2, 3)  -- Не обновляем уже завершенные или отмененные
+    `
+
+	_, err := s.connection.Exec(context.Background(), updateQuery, patientID)
+	if err != nil {
+		s.logger.Error("Failed to update appointment statuses", "error", err)
+		return nil, fmt.Errorf("failed to update appointment statuses: %w", err)
+	}
+
 	query := `
         SELECT appointments.id, 
                CONCAT(doctors.surname, ' ', doctors.name, ' ', doctors.patronymic) AS doctor_fio,
