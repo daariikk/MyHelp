@@ -2,6 +2,13 @@ package domain
 
 import "time"
 
+// статусы записи
+const (
+	SCHEDULED = 1
+	COMPLETED = 2
+	CANCELED  = 3
+)
+
 type Appointment struct {
 	Id                   int       `json:"appointmentID"`
 	DoctorFIO            string    `json:"doctor_fio"`

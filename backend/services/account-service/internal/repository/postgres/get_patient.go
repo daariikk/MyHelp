@@ -84,13 +84,13 @@ func (s *Storage) GetAppointmentByPatientId(patientID int) ([]domain.Appointment
 	// Сначала обновляем статусы прошедших записей для этого пациента
 	updateQuery := `
         UPDATE appointments
-        SET status_id = 2  -- ID статуса "завершено"
+        SET status_id = $2
         WHERE patient_id = $1
         AND (date < CURRENT_DATE OR (date = CURRENT_DATE AND time < CURRENT_TIME))
         AND status_id NOT IN (2, 3)  -- Не обновляем уже завершенные или отмененные
     `
 
-	_, err := s.connection.Exec(context.Background(), updateQuery, patientID)
+	_, err := s.connection.Exec(context.Background(), updateQuery, patientID, domain.COMPLETED)
 	if err != nil {
 		s.logger.Error("Failed to update appointment statuses", "error", err)
 		return nil, fmt.Errorf("failed to update appointment statuses: %w", err)
