@@ -59,6 +59,10 @@ func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
 }
 
 func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doctor, error) {
+	err := s.CalculateRating(nil, &specializationID)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("Error calculating rating: %v", err))
+	}
 	query := `
 		SELECT doctors.id, 
 		       surname,

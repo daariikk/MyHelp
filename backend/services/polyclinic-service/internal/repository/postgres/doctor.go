@@ -6,7 +6,95 @@ import (
 	"fmt"
 	"github.com/daariikk/MyHelp/services/polyclinic-service/internal/domain"
 	"github.com/pkg/errors"
+	"time"
 )
+
+func (s *Storage) CalculateRating(doctorID *int, specializationID *int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Определяем условие WHERE в зависимости от входных параметров
+	var whereClause string
+	var args []interface{}
+
+	if doctorID != nil {
+		whereClause = "WHERE d.id = $1"
+		args = append(args, *doctorID)
+	} else if specializationID != nil {
+		whereClause = "WHERE d.specialization_id = $1"
+		args = append(args, *specializationID)
+	} else {
+		return errors.New("either doctorID or specializationID must be provided")
+	}
+
+	// Получаем список врачей для обновления
+	doctorsQuery := `
+        SELECT d.id FROM doctors d
+        ` + whereClause
+	rows, err := s.connection.Query(ctx, doctorsQuery, args...)
+	if err != nil {
+		return fmt.Errorf("failed to get doctors list: %w", err)
+	}
+	defer rows.Close()
+
+	var doctorIDs []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return fmt.Errorf("failed to scan doctor ID: %w", err)
+		}
+		doctorIDs = append(doctorIDs, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating doctors list: %w", err)
+	}
+
+	// Для каждого врача рассчитываем и обновляем рейтинг
+	for _, id := range doctorIDs {
+		if err := s.calculateAndUpdateRatingForDoctor(id); err != nil {
+			s.logger.Error(fmt.Sprintf("Failed to update rating for doctor %d: %v", id, err))
+			// Продолжаем для остальных врачей, даже если один не удался
+			continue
+		}
+	}
+
+	return nil
+}
+
+func (s *Storage) calculateAndUpdateRatingForDoctor(doctorID int) error {
+	s.logger.Debug("Calculating rating for doctor", doctorID)
+	query := `
+	SELECT avg(rating) FROM appointments
+	WHERE doctor_id = $1 AND rating IS NOT NULL ;
+`
+	var avgRatingRaw sql.NullFloat64
+
+	err := s.connection.QueryRow(context.Background(), query, doctorID).Scan(&avgRatingRaw)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("Error query in database for calculate rating for doctorID=%v", doctorID))
+		return fmt.Errorf("failed to calculate average rating: %w", err)
+	}
+	if !avgRatingRaw.Valid {
+		s.logger.Debug(fmt.Sprintf("No valid ratings for doctorID=%v", doctorID))
+		return fmt.Errorf("failed to calculate average rating: no valid ratings for doctorID=%v", doctorID)
+	}
+
+	s.logger.Info(fmt.Sprintf("Calculated rating for doctorID=%v: rating=%v", doctorID, avgRatingRaw.Float64))
+
+	query = `
+	UPDATE doctors
+	SET rating = $1
+	WHERE id = $2
+`
+	_, err = s.connection.Exec(context.Background(), query, avgRatingRaw.Float64, doctorID)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("Error updating rating for doctorID=%v", doctorID))
+		return fmt.Errorf("failed to update doctor rating: %w", err)
+	}
+	s.logger.Info(fmt.Sprintf("Updated rating for doctorID=%v", doctorID))
+	return nil
+}
 
 func (s *Storage) NewDoctor(newDoctor domain.Doctor) (domain.Doctor, error) {
 	subQuery := `
@@ -24,8 +112,8 @@ func (s *Storage) NewDoctor(newDoctor domain.Doctor) (domain.Doctor, error) {
 	}
 
 	query := `
-	INSERT INTO doctors (surname, name, patronymic, specialization_id, education, progress, rating)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)
+	INSERT INTO doctors (surname, name, patronymic, specialization_id, education, progress)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id
 `
 	var doctorID int64
@@ -35,8 +123,7 @@ func (s *Storage) NewDoctor(newDoctor domain.Doctor) (domain.Doctor, error) {
 		newDoctor.Patronymic,
 		specializationID,
 		newDoctor.Education,
-		newDoctor.Progress,
-		newDoctor.Rating).Scan(&doctorID)
+		newDoctor.Progress).Scan(&doctorID)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("Error create doctor in database: %s %s %s", newDoctor.Surname, newDoctor.Name, newDoctor.Patronymic))
 		return domain.Doctor{}, err
@@ -72,6 +159,11 @@ func (s *Storage) DeleteDoctor(doctorID int) (bool, error) {
 }
 
 func (s *Storage) GetDoctorById(doctorID int) (domain.Doctor, error) {
+	err := s.CalculateRating(&doctorID, nil)
+	if err != nil {
+		s.logger.Error(err.Error())
+	}
+
 	query := `
 	SELECT  d.id, 
 	        surname, 
@@ -87,7 +179,7 @@ func (s *Storage) GetDoctorById(doctorID int) (domain.Doctor, error) {
 `
 	var doctor domain.Doctor
 	var surname, name, patronymic sql.NullString
-	err := s.connection.QueryRow(context.Background(), query, doctorID).Scan(
+	err = s.connection.QueryRow(context.Background(), query, doctorID).Scan(
 		&doctor.Id,
 		&surname,
 		&name,
