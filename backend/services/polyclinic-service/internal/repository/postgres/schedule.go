@@ -44,21 +44,28 @@ func (s *Storage) CreateNewScheduleForDoctor(doctorID int, records []domain.Reco
 }
 
 func (s *Storage) GetScheduleForDoctor(doctorID int, date time.Time) ([]domain.Record, error) {
+	// Создаем контекст с таймаутом
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	query := `
-	SELECT  id,
-	        doctor_id,
-	        date,
-	        start_time, 
-	   		end_time, 
-	    	is_available
-	FROM doctor_schedules 
-	WHERE doctor_id = $1 AND date >= $2
-`
-	rows, err := s.connection.Query(context.Background(), query, doctorID, date)
+    SELECT  id,
+            doctor_id,
+            date,
+            start_time, 
+            end_time, 
+            is_available
+    FROM doctor_schedules 
+    WHERE doctor_id = $1 AND date >= $2
+    `
+
+	// Выполняем запрос с контекстом
+	rows, err := s.connection.Query(ctx, query, doctorID, date)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("Error execution sql query: %v", err))
 		return nil, errors.Wrapf(err, "Error executing sql query: %v", query)
 	}
+	defer rows.Close()
 
 	var records []domain.Record
 
@@ -73,11 +80,16 @@ func (s *Storage) GetScheduleForDoctor(doctorID int, date time.Time) ([]domain.R
 			&record.IsAvailable,
 		)
 		if err != nil {
-			s.logger.Error(fmt.Sprintf("Error execution sql query: %v", err))
-			return nil, errors.Wrapf(err, "Error executing sql query: %v", query)
+			s.logger.Error(fmt.Sprintf("Error scanning row: %v", err))
+			return nil, errors.Wrap(err, "error scanning row")
 		}
-
 		records = append(records, record)
+	}
+
+	// Проверяем ошибки после итерации
+	if err := rows.Err(); err != nil {
+		s.logger.Error(fmt.Sprintf("Error after row iteration: %v", err))
+		return nil, errors.Wrap(err, "error after row iteration")
 	}
 
 	return records, nil

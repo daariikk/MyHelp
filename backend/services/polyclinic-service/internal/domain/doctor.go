@@ -9,10 +9,5 @@ type Doctor struct {
 	Education      string  `json:"education"`
 	Progress       string  `json:"progress"`
 	Rating         float64 `json:"rating"`
-	Photo          *Photo  `json:"photo"`
-}
-
-type Photo struct {
-	Name     string `json:"name"`
-	FilePath string `json:"filePath"`
+	PhotoPath      string  `json:"photo"`
 }

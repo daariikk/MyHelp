@@ -70,8 +70,6 @@ func (uc *ScheduleUseCase) CreateScheduleForDoctorById(doctorID int,
 		currentTime = nextTime
 	}
 
-	// uc.logger.Debug("Records", "records", records)
-
 	return domain.Schedule{
 		Records: records,
 	}, nil

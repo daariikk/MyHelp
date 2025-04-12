@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"log/slog"
+	"time"
 )
 
 type Storage struct {
@@ -16,20 +17,54 @@ type Storage struct {
 }
 
 func New(ctx context.Context, logger *slog.Logger, url string) (*Storage, error) {
-	conn, err := pgx.Connect(ctx, url)
+	// Парсим URL для получения конфигурации
+	config, err := pgx.ParseConfig(url)
+	if err != nil {
+		logger.Error("Failed to parse postgres connection string", "error", err)
+		return nil, errors.Wrap(err, "failed to parse postgres connection string")
+	}
+
+	// Устанавливаем соединение с конфигурацией
+	conn, err := pgx.ConnectConfig(ctx, config)
 	if err != nil {
 		logger.Error("Failed to connect to postgres", "error", err)
 		return nil, errors.Wrapf(err, "failed to connect to postgres")
 	}
 
-	return &Storage{conn, logger}, nil
+	// Проверяем соединение
+	if err := conn.Ping(ctx); err != nil {
+		logger.Error("Failed to ping postgres", "error", err)
+		return nil, errors.Wrap(err, "failed to ping postgres")
+	}
+
+	logger.Info("Successfully connected to postgres")
+	return &Storage{connection: conn, logger: logger}, nil
 }
 
 func (s *Storage) Close() error {
-	if s.connection != nil {
-		return s.connection.Close(context.Background())
+	if s.connection == nil {
+		return nil
 	}
+
+	// Создаем контекст с таймаутом для закрытия соединения
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := s.connection.Close(ctx); err != nil {
+		s.logger.Error("Failed to close postgres connection", "error", err)
+		return errors.Wrap(err, "failed to close postgres connection")
+	}
+
+	s.logger.Info("Postgres connection closed successfully")
 	return nil
+}
+
+// Дополнительный метод для проверки соединения
+func (s *Storage) Ping(ctx context.Context) error {
+	if s.connection == nil {
+		return errors.New("connection is nil")
+	}
+	return s.connection.Ping(ctx)
 }
 
 func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
@@ -45,6 +80,7 @@ func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
 		return nil, errors.Wrapf(err, "Error executing sql query: %v", query)
 	}
 
+	defer rows.Close()
 	for rows.Next() {
 		var specialization domain.Specialization
 		err = rows.Scan(
@@ -55,6 +91,13 @@ func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
 		)
 		specializations = append(specializations, specialization)
 	}
+
+	// Проверяем ошибки, которые могли возникнуть во время итерации
+	if err := rows.Err(); err != nil {
+		s.logger.Error(fmt.Sprintf("Error during rows iteration: %v", err))
+		return nil, errors.Wrap(err, "Error during rows iteration")
+	}
+
 	return specializations, nil
 }
 
@@ -71,7 +114,8 @@ func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doc
 		       specialization.specialization_doctor, 
 		       education, 
 		       progress, 
-		       rating
+		       rating,
+		       photo_path
 		FROM doctors
 		JOIN specialization ON doctors.specialization_id = specialization.id
 		WHERE specialization_id = $1
@@ -82,10 +126,13 @@ func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doc
 		s.logger.Error(fmt.Sprintf("Error execution sql query: %v", err))
 		return nil, errors.Wrapf(err, "Error executing sql query: %v", query)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var doctor domain.Doctor
 		var education sql.NullString
 		var progress sql.NullString
+		var photoPath sql.NullString
 
 		err = rows.Scan(
 			&doctor.Id,
@@ -96,6 +143,7 @@ func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doc
 			&education,
 			&progress,
 			&doctor.Rating,
+			&photoPath,
 		)
 		if err != nil {
 			s.logger.Error(fmt.Sprintf("Error execution sql query: %v", err))
@@ -107,6 +155,9 @@ func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doc
 		}
 		if progress.Valid {
 			doctor.Progress = progress.String
+		}
+		if photoPath.Valid {
+			doctor.PhotoPath = photoPath.String
 		}
 
 		doctors = append(doctors, doctor)

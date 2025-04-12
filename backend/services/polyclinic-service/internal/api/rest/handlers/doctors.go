@@ -30,6 +30,7 @@ func NewDoctorHandler(logger *slog.Logger, wrapper ControlDoctorsWrapper) func(h
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse body: %e", err))
 			response.SendFailureResponse(w, "Error parse body", http.StatusBadRequest)
+			return
 		}
 
 		logger.Debug("newDoctor", newDoctor)
@@ -38,6 +39,7 @@ func NewDoctorHandler(logger *slog.Logger, wrapper ControlDoctorsWrapper) func(h
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error create doctor: %e", err))
 			response.SendFailureResponse(w, "Error create doctor", http.StatusInternalServerError)
+			return
 		}
 
 		logger.Debug("New doctor: ", "doctor", doctor)
@@ -83,6 +85,7 @@ func GetScheduleDoctorByIdHandler(logger *slog.Logger, wrapper ControlDoctorsWra
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse doctorID: %e", err))
 			response.SendFailureResponse(w, "Error parse doctorID", http.StatusBadRequest)
+			return
 		}
 		dateStr := r.URL.Query().Get("date")
 		if dateStr == "" {
@@ -104,12 +107,14 @@ func GetScheduleDoctorByIdHandler(logger *slog.Logger, wrapper ControlDoctorsWra
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error get doctor: %e", err))
 			response.SendFailureResponse(w, "Error get doctor", http.StatusInternalServerError)
+			return
 		}
 
 		schedule, err := wrapper.GetScheduleForDoctor(doctor.Id, date)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error get doctor schedule: %e", err))
 			response.SendFailureResponse(w, "Error get doctor schedule", http.StatusInternalServerError)
+			return
 		}
 
 		// Формируем ответ
@@ -125,7 +130,7 @@ func GetScheduleDoctorByIdHandler(logger *slog.Logger, wrapper ControlDoctorsWra
 func NewScheduleHandler(logger *slog.Logger, wrapperDB ControlDoctorsWrapper, wrapper use_cases.NewScheduleWrapper) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info("NewScheduleHandler starting...")
-
+		logger.Debug("URL", r.URL)
 		doctorIDStr := chi.URLParam(r, "doctorID")
 		doctorID, err := strconv.ParseInt(doctorIDStr, 10, 64)
 		if err != nil {

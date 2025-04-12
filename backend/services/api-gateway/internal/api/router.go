@@ -15,7 +15,10 @@ func NewRouter(cfg *config.Config, logger *slog.Logger, storage *postgres.Storag
 	router.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/signin", handlers.RegisterHandler(logger, storage))
 		r.Post("/signup", handlers.LoginHandler(logger, storage, cfg))
+		r.Post("/signup/admin", handlers.LoginAdminHandler(logger, storage, cfg))
 		r.Post("/refresh", handlers.RefreshHandler(logger, cfg))
+		r.Get("/get-user", handlers.GetUserHandler(logger, storage))
+		r.Get("/get-admin", handlers.GetAdminHandler(logger, storage))
 		// r.Post("/reset-password", handlers.ResetHandler(logger, cfg))
 	})
 

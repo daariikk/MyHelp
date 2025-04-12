@@ -10,3 +10,11 @@ type User struct {
 	Password   string `json:"password"`
 	IsDeleted  bool   `json:"is_deleted"`
 }
+
+type Admin struct {
+	Id       int    `json:"adminID"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	IsActive bool   `json:"isActive"`
+}

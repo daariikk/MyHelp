@@ -97,7 +97,7 @@ func (s *Storage) NewAppointment(appointment domain.Appointment) error {
         SET is_available = false
         WHERE doctor_id = $1 
         AND date = $2 
-        AND start_time <= $3 
+        AND start_time = $3 
     `
 	_, err = tx.Exec(context.Background(), updateQuery,
 		appointment.DoctorID,

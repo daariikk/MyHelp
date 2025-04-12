@@ -112,8 +112,8 @@ func (s *Storage) NewDoctor(newDoctor domain.Doctor) (domain.Doctor, error) {
 	}
 
 	query := `
-	INSERT INTO doctors (surname, name, patronymic, specialization_id, education, progress)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO doctors (surname, name, patronymic, specialization_id, education, progress, photo_path)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	RETURNING id
 `
 	var doctorID int64
@@ -123,7 +123,8 @@ func (s *Storage) NewDoctor(newDoctor domain.Doctor) (domain.Doctor, error) {
 		newDoctor.Patronymic,
 		specializationID,
 		newDoctor.Education,
-		newDoctor.Progress).Scan(&doctorID)
+		newDoctor.Progress,
+		newDoctor.PhotoPath).Scan(&doctorID)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("Error create doctor in database: %s %s %s", newDoctor.Surname, newDoctor.Name, newDoctor.Patronymic))
 		return domain.Doctor{}, err
@@ -172,13 +173,14 @@ func (s *Storage) GetDoctorById(doctorID int) (domain.Doctor, error) {
 	        s.specialization_doctor, 
 	        education, 
 	        progress, 
-	        rating
+	        rating,
+	        photo_path
 	    FROM doctors d
 	    join specialization s on s.id = d.specialization_id
 	    WHERE d.id = $1
 `
 	var doctor domain.Doctor
-	var surname, name, patronymic sql.NullString
+	var surname, name, patronymic, photoPath sql.NullString
 	err = s.connection.QueryRow(context.Background(), query, doctorID).Scan(
 		&doctor.Id,
 		&surname,
@@ -188,6 +190,7 @@ func (s *Storage) GetDoctorById(doctorID int) (domain.Doctor, error) {
 		&doctor.Education,
 		&doctor.Progress,
 		&doctor.Rating,
+		&photoPath,
 	)
 
 	if err != nil {
@@ -209,6 +212,11 @@ func (s *Storage) GetDoctorById(doctorID int) (domain.Doctor, error) {
 
 	if patronymic.Valid {
 		doctor.Patronymic = patronymic.String
+	} else {
+		doctor.Patronymic = ""
+	}
+	if photoPath.Valid {
+		doctor.PhotoPath = photoPath.String
 	} else {
 		doctor.Patronymic = ""
 	}
