@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/daariikk/MyHelp/services/account-service/internal/domain"
+	"github.com/daariikk/MyHelp/services/account-service/internal/repository"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"log/slog"
@@ -51,8 +52,8 @@ func (s *Storage) GetPatientById(patientID int) (domain.Patient, error) {
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			s.logger.Debug("patient not found in database")
-			return domain.Patient{}, errors.Wrapf(err, "patient with id %d not found", patientID)
+			s.logger.Debug("Patient not found in database")
+			return domain.Patient{}, fmt.Errorf("%w: patient with id %d not found", repository.ErrorNotFound, patientID)
 		}
 		return domain.Patient{}, errors.Wrapf(err, "failed to get patient with id %d", patientID)
 	}

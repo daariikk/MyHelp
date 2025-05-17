@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"github.com/daariikk/MyHelp/services/account-service/internal/api/response"
 	"github.com/daariikk/MyHelp/services/account-service/internal/domain"
+	"github.com/daariikk/MyHelp/services/account-service/internal/repository"
+	"github.com/pkg/errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -33,9 +35,15 @@ func UpdatePatientInfoHandler(logger *slog.Logger, wrapper UpdatePatientWrapper)
 		updatedPatient, err := wrapper.UpdatePatientById(patient)
 
 		logger.Debug("updatedPatient", "updatedPatient", updatedPatient)
-
 		if err != nil {
-			response.SendFailureResponse(w, "Error updating patient: "+err.Error(), http.StatusInternalServerError)
+			if errors.Is(err, repository.ErrorEmailUnique) {
+				logger.Debug("Email does not unique")
+				response.SendFailureResponse(w, "Email already exists", http.StatusBadRequest)
+				return
+			} else {
+				response.SendFailureResponse(w, "Error updating patient: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 
 		logger.Info("UpdatePatientInfoHandler works successful")

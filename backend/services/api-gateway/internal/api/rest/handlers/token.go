@@ -23,6 +23,8 @@ func generateAccessToken(cfg *config.Config, patientID int) (string, error) {
 	return tokenString, nil
 }
 
+
+
 // Генерация Refresh токена
 func generateRefreshToken(cfg *config.Config, patientID int) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

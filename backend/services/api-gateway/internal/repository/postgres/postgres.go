@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"github.com/daariikk/MyHelp/services/api-gateway/internal/domain"
 	"github.com/daariikk/MyHelp/services/api-gateway/internal/repository"
 	"github.com/jackc/pgx/v5"
@@ -38,20 +39,31 @@ func (s *Storage) RegisterUser(user domain.User) (domain.User, error) {
 	}
 
 	query := `
-		INSERT INTO patients (name, polic, email, password)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO patients (
+            surname, 
+            name, 
+            patronymic, 
+            polic, 
+            email, 
+            password
+        ) VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
-`
+    `
+
 	var patientId int
 	err = s.connection.QueryRow(context.Background(), query,
+		user.Surname,
 		user.Name,
+		user.Patronymic,
 		user.Polic,
 		user.Email,
 		user.Password,
 	).Scan(&patientId)
+
 	if err != nil {
-		return domain.User{}, errors.Wrap(err, "failed to register user")
+		return domain.User{}, fmt.Errorf("failed to register user: %w", err)
 	}
+
 	user.Id = patientId
 	return user, nil
 }

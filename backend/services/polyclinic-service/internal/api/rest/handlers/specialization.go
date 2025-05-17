@@ -28,6 +28,10 @@ func GetPolyclinicInfoHandler(logger *slog.Logger, wrapper SpecializationWrapper
 			return
 		}
 
+		if schedule == nil {
+			schedule = []domain.Specialization{}
+		}
+
 		logger.Debug("Schedule: ", "schedule", schedule)
 		logger.Info("GetPolyclinicInfoHandler works successful")
 
@@ -51,6 +55,10 @@ func GetSpecializationDoctorHandler(logger *slog.Logger, wrapper SpecializationW
 			logger.Error(fmt.Sprintf("Error get list doctors for specialization with specializationID=%v: %s", specializationID, err))
 			response.SendFailureResponse(w, "Error get list doctors", http.StatusInternalServerError)
 			return
+		}
+
+		if doctors == nil {
+			doctors = []domain.Doctor{}
 		}
 
 		logger.Debug("doctors list", "doctors", doctors)

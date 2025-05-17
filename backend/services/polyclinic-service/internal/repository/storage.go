@@ -3,6 +3,7 @@ package repository
 import "errors"
 
 var (
-	ErrorAlreadyExists = errors.New("patient with this data already exists")
-	ErrorNotFound      = errors.New("patient is not found")
+	ErrorAlreadyExists          = errors.New("patient with this data already exists")
+	ErrorDoctorNotFound         = errors.New("doctor is not found")
+	ErrorSpecializationNotFound = errors.New("specialization is not found")
 )

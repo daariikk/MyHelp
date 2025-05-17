@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/daariikk/MyHelp/services/polyclinic-service/internal/api/response"
 	"github.com/daariikk/MyHelp/services/polyclinic-service/internal/domain"
+	"github.com/daariikk/MyHelp/services/polyclinic-service/internal/repository"
 	"github.com/daariikk/MyHelp/services/polyclinic-service/internal/use_cases"
 	"github.com/go-chi/chi/v5"
+	"github.com/pkg/errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -105,6 +107,10 @@ func GetScheduleDoctorByIdHandler(logger *slog.Logger, wrapper ControlDoctorsWra
 
 		doctor, err := wrapper.GetDoctorById(int(doctorID))
 		if err != nil {
+			if errors.Is(err, repository.ErrorDoctorNotFound) {
+				response.SendFailureResponse(w, "Doctor not found", http.StatusNotFound)
+				return
+			}
 			logger.Error(fmt.Sprintf("Error get doctor: %e", err))
 			response.SendFailureResponse(w, "Error get doctor", http.StatusInternalServerError)
 			return
@@ -117,10 +123,15 @@ func GetScheduleDoctorByIdHandler(logger *slog.Logger, wrapper ControlDoctorsWra
 			return
 		}
 
-		// Формируем ответ
 		scheduleInfo := domain.ScheduleInfoDTO{
-			Doctor:   doctor,
-			Schedule: domain.Schedule{Records: schedule},
+			Doctor: doctor,
+			Schedule: domain.Schedule{
+				Records: schedule,
+			},
+		}
+
+		if scheduleInfo.Schedule.Records == nil {
+			scheduleInfo.Schedule.Records = []domain.Record{}
 		}
 
 		response.SendSuccessResponse(w, scheduleInfo, http.StatusOK)

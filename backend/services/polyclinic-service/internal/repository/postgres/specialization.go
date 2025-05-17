@@ -12,6 +12,7 @@ import (
 )
 
 type Storage struct {
+	//pool       *pgxpool.Pool
 	connection *pgx.Conn
 	logger     *slog.Logger
 }
@@ -76,6 +77,9 @@ func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
 
 	rows, err := s.connection.Query(context.Background(), query)
 	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
 		s.logger.Error(fmt.Sprintf("Error execution sql query: %v", err))
 		return nil, errors.Wrapf(err, "Error executing sql query: %v", query)
 	}
@@ -102,10 +106,10 @@ func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
 }
 
 func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doctor, error) {
-	err := s.CalculateRating(nil, &specializationID)
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("Error calculating rating: %v", err))
-	}
+	//err := s.CalculateRating(nil, &specializationID)
+	//if err != nil {
+	//	s.logger.Error(fmt.Sprintf("Error calculating rating: %v", err))
+	//}
 	query := `
 		SELECT doctors.id, 
 		       surname,
@@ -123,6 +127,9 @@ func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doc
 	var doctors []domain.Doctor
 	rows, err := s.connection.Query(context.Background(), query, specializationID)
 	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
 		s.logger.Error(fmt.Sprintf("Error execution sql query: %v", err))
 		return nil, errors.Wrapf(err, "Error executing sql query: %v", query)
 	}

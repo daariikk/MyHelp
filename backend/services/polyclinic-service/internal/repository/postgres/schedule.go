@@ -9,38 +9,40 @@ import (
 )
 
 func (s *Storage) CreateNewScheduleForDoctor(doctorID int, records []domain.Record) error {
-	query := `
-		INSERT INTO doctor_schedules (doctor_id, date, start_time, end_time, is_available)
-		VALUES ($1, $2, $3, $4, $5)
-	`
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	tx, err := s.connection.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
+	// Гарантируем завершение транзакции
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+
+	query := `
+        INSERT INTO doctor_schedules (doctor_id, date, start_time, end_time, is_available)
+        VALUES ($1, $2, $3, $4, $5)
+    `
+
 	for _, record := range records {
-		_, err := s.connection.Exec(ctx, query,
-			doctorID,           // doctor_id
-			record.Date,        // date
-			record.Start,       // start_time
-			record.End,         // end_time
-			record.IsAvailable, // is_available
+		_, err := tx.Exec(ctx, query, // Используем tx.Exec вместо s.connection.Exec
+			doctorID,
+			record.Date,
+			record.Start,
+			record.End,
+			record.IsAvailable,
 		)
 		if err != nil {
-			// Откатываем транзакцию в случае ошибки
-			_ = tx.Rollback(ctx)
 			return fmt.Errorf("failed to insert record: %w", err)
 		}
 	}
-	// Фиксируем транзакцию
-	err = tx.Commit(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *Storage) GetScheduleForDoctor(doctorID int, date time.Time) ([]domain.Record, error) {
@@ -62,6 +64,9 @@ func (s *Storage) GetScheduleForDoctor(doctorID int, date time.Time) ([]domain.R
 	// Выполняем запрос с контекстом
 	rows, err := s.connection.Query(ctx, query, doctorID, date)
 	if err != nil {
+		if rows != nil {
+			rows.Close()
+		}
 		s.logger.Error(fmt.Sprintf("Error execution sql query: %v", err))
 		return nil, errors.Wrapf(err, "Error executing sql query: %v", query)
 	}

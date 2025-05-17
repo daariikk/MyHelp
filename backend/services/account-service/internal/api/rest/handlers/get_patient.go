@@ -31,9 +31,11 @@ func GetPatientByIdHandler(logger *slog.Logger, wrapper GetPatientWrapper) func(
 			if errors.Is(err, repository.ErrorNotFound) {
 				logger.Debug("Patient not found", sl.Err(err))
 				response.SendFailureResponse(w, fmt.Sprintf("Patient with patientID=%v not found", patientID), http.StatusNotFound)
+				return
 			} else {
 				logger.Debug(fmt.Sprintf("Error get info for patient with patientID=%v", patientID), sl.Err(err))
 				response.SendFailureResponse(w, "Failed to get patient", http.StatusInternalServerError)
+				return
 			}
 		}
 
