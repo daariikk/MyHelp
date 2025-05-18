@@ -8,5 +8,6 @@ CREATE TABLE doctors (
     education VARCHAR(512),
     progress VARCHAR(1024),
     rating FLOAT default 5.0,
+	photo_path VARCHAR(512),
     FOREIGN KEY (specialization_id) REFERENCES specialization(id) ON DELETE CASCADE
 );
