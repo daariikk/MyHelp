@@ -19,7 +19,7 @@ func NewDoctor(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 func DeleteDoctor(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		doctorID := chi.URLParam(r, "doctorID")
-		url := fmt.Sprintf("%s/MyHelp/doctors/{%s}", cfg.Services.PolyclinicService, doctorID)
+		url := fmt.Sprintf("%s/MyHelp/doctors/%s", cfg.Services.PolyclinicService, doctorID)
 		helper.ForwardRequest(logger, w, r, url, "DELETE")
 	}
 }
@@ -27,7 +27,7 @@ func DeleteDoctor(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 func GetSchedule(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		doctorID := chi.URLParam(r, "doctorID")
-		url := fmt.Sprintf("%s/MyHelp/schedule/doctors/{%s}", cfg.Services.PolyclinicService, doctorID)
+		url := fmt.Sprintf("%s/MyHelp/schedule/doctors/%s", cfg.Services.PolyclinicService, doctorID)
 		helper.ForwardRequest(logger, w, r, url, "GET")
 	}
 }
@@ -35,7 +35,7 @@ func GetSchedule(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 func NewSchedule(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		doctorID := chi.URLParam(r, "doctorID")
-		url := fmt.Sprintf("%s/MyHelp/schedule/doctors/{%s}", cfg.Services.PolyclinicService, doctorID)
+		url := fmt.Sprintf("%s/MyHelp/schedule/doctors/%s", cfg.Services.PolyclinicService, doctorID)
 		helper.ForwardRequest(logger, w, r, url, "POST")
 	}
 }

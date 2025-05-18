@@ -19,7 +19,7 @@ func GetPolyclinic(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 func GetDoctorsBySpecialization(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		specializationID := chi.URLParam(r, "specializationID")
-		url := fmt.Sprintf("%s/MyHelp/specializations/{%s}", cfg.Services.PolyclinicService, specializationID)
+		url := fmt.Sprintf("%s/MyHelp/specializations/%s", cfg.Services.PolyclinicService, specializationID)
 		helper.ForwardRequest(logger, w, r, url, "GET")
 	}
 }
@@ -34,7 +34,7 @@ func NewSpecialization(logger *slog.Logger, cfg *config.Config) http.HandlerFunc
 func DeleteSpecialization(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		specializationID := chi.URLParam(r, "specializationID")
-		url := fmt.Sprintf("%s/MyHelp/specializations/{%s}", cfg.Services.PolyclinicService, specializationID)
+		url := fmt.Sprintf("%s/MyHelp/specializations/%s", cfg.Services.PolyclinicService, specializationID)
 		helper.ForwardRequest(logger, w, r, url, "DELETE")
 	}
 }
