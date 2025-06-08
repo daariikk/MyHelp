@@ -6,6 +6,8 @@ import (
 	"github.com/daariikk/MyHelp/services/api-gateway/internal/api/response"
 	"github.com/daariikk/MyHelp/services/api-gateway/internal/config"
 	"github.com/daariikk/MyHelp/services/api-gateway/internal/domain"
+	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -33,21 +35,26 @@ func LoginHandler(logger *slog.Logger, auth LoginWrapper, cfg *config.Config) ht
 		logger.Debug("Пытаемся получить пароль по указанному email")
 		patientId, encodedPassword, err := auth.GetPassword(request.Email)
 		if err != nil {
-			logger.Error("Произошла ошибка внутри функции GetPassword")
-			//logger.Error(err.Error())
-			response.SendFailureResponse(w, fmt.Sprintf("Failed to auth user: %s", err), http.StatusInternalServerError)
+			logger.Info("Произошла ошибка внутри функции GetPassword", "error", err.Error())
+
+			if err.Error() == "user not found" {
+				response.SendFailureResponse(w, "Пользователь с таким email не существует", http.StatusNotFound)
+			} else {
+				logger.Error(fmt.Sprintf("Ошибка в GetPassword: %s", err))
+				response.SendFailureResponse(w, fmt.Sprintf("Failed to auth user: %s", err), http.StatusInternalServerError)
+			}
 			return
 		}
 		logger.Debug("GetPassword отработала успешно")
-		logger.Debug("patientId и encodedPassword", slog.Int("patientId", patientId), slog.String("encodedPassword", encodedPassword))
+		// logger.Debug("patientId и encodedPassword", slog.Int("patientId", patientId), slog.String("encodedPassword", encodedPassword))
 
-		logger.Debug("Пытаемся проверить совпадают ли пароли")
-		logger.Debug("Расшифрованный пароль: ", slog.String("decodedPassword", encodedPassword))
-		logger.Debug("Присланный пароль: ", slog.String("inputPassword", request.Password))
+		// logger.Debug("Пытаемся проверить совпадают ли пароли")
+		// logger.Debug("Расшифрованный пароль: ", slog.String("decodedPassword", encodedPassword))
+		// logger.Debug("Присланный пароль: ", slog.String("inputPassword", request.Password))
 		if encodedPassword != request.Password {
 			logger.Info("Пароли не совпадают")
 			// logger.Error(err.Error())
-			response.SendFailureResponse(w, fmt.Sprintf("Failed to auth user: %v", err), http.StatusUnauthorized)
+			response.SendFailureResponse(w, fmt.Sprintf("Failed to auth user: %v", "Неверный пароль"), http.StatusUnauthorized)
 			return
 		}
 		logger.Debug("Пароль введен успешно")
@@ -86,7 +93,7 @@ func LoginHandler(logger *slog.Logger, auth LoginWrapper, cfg *config.Config) ht
 			"refresh_lifetime": time.Now().Add(refreshLifetime).Format(time.RFC3339),
 		}
 
-		logger.Debug("Сформированный ответ", res)
+		// logger.Debug("Сформированный ответ", res)
 
 		logger.Info("LoginHandler works successful")
 		response.SendSuccessResponse(w, res, http.StatusOK)
@@ -102,11 +109,17 @@ func GetUserHandler(logger *slog.Logger, auth LoginWrapper) http.HandlerFunc {
 		if email == "" {
 			logger.Error("Email is empty")
 			response.SendFailureResponse(w, "Email is empty", http.StatusBadRequest)
+			return
 		}
 		patient, err := auth.GetUser(email)
 		if err != nil {
-			logger.Error("Произошла ошибка внутри функции GetUser")
-			response.SendFailureResponse(w, "Failed get to user", http.StatusInternalServerError)
+			logger.Error("Произошла ошибка внутри функции GetUser", "error", err)
+			if errors.Is(err, pgx.ErrNoRows) || err.Error() == "user not found" {
+				response.SendFailureResponse(w, "Пользователь с таким email не существует", http.StatusNotFound)
+			} else {
+				response.SendFailureResponse(w, "Failed get to user", http.StatusInternalServerError)
+			}
+			return
 		}
 
 		logger.Debug("GetUserHandler works successful")

@@ -10,6 +10,7 @@ import (
 )
 
 func GetPolyclinic(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s/MyHelp/specializations", cfg.Services.PolyclinicService)
 		helper.ForwardRequest(logger, w, r, url, "GET")
@@ -25,6 +26,7 @@ func GetDoctorsBySpecialization(logger *slog.Logger, cfg *config.Config) http.Ha
 }
 
 func NewSpecialization(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
+	logger.Info("Перенаправление на запрос в сервис polyclinic-service на создание специализации")
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s/MyHelp/specializations", cfg.Services.PolyclinicService)
 		helper.ForwardRequest(logger, w, r, url, "POST")
@@ -32,9 +34,12 @@ func NewSpecialization(logger *slog.Logger, cfg *config.Config) http.HandlerFunc
 }
 
 func DeleteSpecialization(logger *slog.Logger, cfg *config.Config) http.HandlerFunc {
+	// logger.Info("Forwarding DELETE to ", slog.String("url", url))
 	return func(w http.ResponseWriter, r *http.Request) {
 		specializationID := chi.URLParam(r, "specializationID")
 		url := fmt.Sprintf("%s/MyHelp/specializations/%s", cfg.Services.PolyclinicService, specializationID)
+		logger.Info("Forwarding DELETE to ", slog.String("url", url))
+
 		helper.ForwardRequest(logger, w, r, url, "DELETE")
 	}
 }
