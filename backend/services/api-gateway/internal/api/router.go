@@ -55,9 +55,10 @@ func NewRouter(cfg *config.Config, logger *slog.Logger, storage *postgres.Storag
 	// Schedule routes
 	router.Route("/MyHelp/schedule", func(r chi.Router) {
 		// Public
-		r.Route("/doctors", func(r chi.Router) {
-			r.Get("/{doctorID}", polyclinic_service.GetSchedule(logger, cfg))
-		})
+		r.Get("/doctors/{doctorID}", polyclinic_service.GetSchedule(logger, cfg))
+
+		r.With(handlers.AuthMiddleware(logger, cfg)).
+			Post("/doctors/{doctorID}", polyclinic_service.NewSchedule(logger, cfg))
 
 		// Protected appointments
 		r.Route("/appointments", func(r chi.Router) {
