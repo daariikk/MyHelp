@@ -5,68 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/daariikk/MyHelp/services/polyclinic-service/internal/domain"
-	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
-	"log/slog"
-	"time"
 )
-
-type Storage struct {
-	//pool       *pgxpool.Pool
-	connection *pgx.Conn
-	logger     *slog.Logger
-}
-
-func New(ctx context.Context, logger *slog.Logger, url string) (*Storage, error) {
-	// Парсим URL для получения конфигурации
-	config, err := pgx.ParseConfig(url)
-	if err != nil {
-		logger.Error("Failed to parse postgres connection string", "error", err)
-		return nil, errors.Wrap(err, "failed to parse postgres connection string")
-	}
-
-	// Устанавливаем соединение с конфигурацией
-	conn, err := pgx.ConnectConfig(ctx, config)
-	if err != nil {
-		logger.Error("Failed to connect to postgres", "error", err)
-		return nil, errors.Wrapf(err, "failed to connect to postgres")
-	}
-
-	// Проверяем соединение
-	if err := conn.Ping(ctx); err != nil {
-		logger.Error("Failed to ping postgres", "error", err)
-		return nil, errors.Wrap(err, "failed to ping postgres")
-	}
-
-	logger.Info("Successfully connected to postgres")
-	return &Storage{connection: conn, logger: logger}, nil
-}
-
-func (s *Storage) Close() error {
-	if s.connection == nil {
-		return nil
-	}
-
-	// Создаем контекст с таймаутом для закрытия соединения
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := s.connection.Close(ctx); err != nil {
-		s.logger.Error("Failed to close postgres connection", "error", err)
-		return errors.Wrap(err, "failed to close postgres connection")
-	}
-
-	s.logger.Info("Postgres connection closed successfully")
-	return nil
-}
-
-// Дополнительный метод для проверки соединения
-func (s *Storage) Ping(ctx context.Context) error {
-	if s.connection == nil {
-		return errors.New("connection is nil")
-	}
-	return s.connection.Ping(ctx)
-}
 
 func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
 	query := `
@@ -75,7 +15,7 @@ func (s *Storage) GetAllSpecializations() ([]domain.Specialization, error) {
 `
 	var specializations []domain.Specialization
 
-	rows, err := s.connection.Query(context.Background(), query)
+	rows, err := s.pool.Query(context.Background(), query)
 	if err != nil {
 		if rows != nil {
 			rows.Close()
@@ -125,7 +65,7 @@ func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doc
 		WHERE specialization_id = $1
 `
 	var doctors []domain.Doctor
-	rows, err := s.connection.Query(context.Background(), query, specializationID)
+	rows, err := s.pool.Query(context.Background(), query, specializationID)
 	if err != nil {
 		if rows != nil {
 			rows.Close()
@@ -170,6 +110,11 @@ func (s *Storage) GetSpecializationAllDoctor(specializationID int) ([]domain.Doc
 		doctors = append(doctors, doctor)
 	}
 
+	if err := rows.Err(); err != nil {
+		s.logger.Error(fmt.Sprintf("Error during rows iteration: %v", err))
+		return nil, errors.Wrap(err, "Error during rows iteration")
+	}
+
 	return doctors, nil
 }
 
@@ -181,7 +126,7 @@ func (s *Storage) CreateNewSpecialization(specialization domain.Specialization) 
 `
 	var specializationId int
 
-	err := s.connection.QueryRow(context.Background(), query,
+	err := s.pool.QueryRow(context.Background(), query,
 		specialization.Specialization,
 		specialization.SpecializationDoctor,
 		specialization.Description,
@@ -198,7 +143,7 @@ func (s *Storage) DeleteSpecialization(specializationID int) (bool, error) {
 	query := `
 	DELETE FROM specialization WHERE id = $1
 `
-	_, err := s.connection.Exec(context.Background(), query, specializationID)
+	_, err := s.pool.Exec(context.Background(), query, specializationID)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("Error executing sql query: %v", err))
 		return false, errors.Wrapf(err, "Error executing sql query: %v", query)

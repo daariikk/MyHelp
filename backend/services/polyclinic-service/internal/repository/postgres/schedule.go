@@ -12,7 +12,7 @@ func (s *Storage) CreateNewScheduleForDoctor(doctorID int, records []domain.Reco
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	tx, err := s.connection.Begin(ctx)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -62,7 +62,7 @@ func (s *Storage) GetScheduleForDoctor(doctorID int, date time.Time) ([]domain.R
     `
 
 	// Выполняем запрос с контекстом
-	rows, err := s.connection.Query(ctx, query, doctorID, date)
+	rows, err := s.pool.Query(ctx, query, doctorID, date)
 	if err != nil {
 		if rows != nil {
 			rows.Close()
