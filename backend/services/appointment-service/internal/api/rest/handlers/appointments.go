@@ -89,6 +89,7 @@ func UpdateAppointmentHandler(logger *slog.Logger, wrapper AppointmentWrapper) f
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse body: %e", err))
 			response.SendFailureResponse(w, "Error parse body", http.StatusBadRequest)
+			return
 		}
 		if appointment.Rating == 0 {
 			response.SendFailureResponse(w, "Rating is missing", http.StatusBadRequest)
