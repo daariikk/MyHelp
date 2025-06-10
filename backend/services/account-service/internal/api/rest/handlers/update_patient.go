@@ -21,7 +21,11 @@ func UpdatePatientInfoHandler(logger *slog.Logger, wrapper UpdatePatientWrapper)
 
 		patientIDStr := r.URL.Query().Get("patientID")
 		patientID, err := strconv.ParseInt(patientIDStr, 10, 64)
-
+		if err != nil {
+			logger.Debug("invalid patientID", "error", err)
+			response.SendFailureResponse(w, "Invalid patientID", http.StatusBadRequest)
+			return
+		}
 		logger.Debug("Handling UPDATE patient request for patient", "patientID", patientID)
 
 		var patient domain.Patient

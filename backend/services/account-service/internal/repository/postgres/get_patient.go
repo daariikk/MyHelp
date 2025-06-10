@@ -7,12 +7,20 @@ import (
 	"github.com/daariikk/MyHelp/services/account-service/internal/domain"
 	"github.com/daariikk/MyHelp/services/account-service/internal/repository"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"log/slog"
 )
 
+type pgxConn interface {
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+	Close(ctx context.Context) error
+}
+
 type Storage struct {
-	connection *pgx.Conn
+	connection pgxConn
 	logger     *slog.Logger
 }
 
@@ -27,18 +35,14 @@ func New(ctx context.Context, logger *slog.Logger, url string) (*Storage, error)
 }
 
 func (s *Storage) Close() error {
-	if s.connection != nil {
-		return s.connection.Close(context.Background())
+	if s == nil || s.connection == nil {
+		return nil
 	}
-	return nil
+	return s.connection.Close(context.Background())
 }
 
 func (s *Storage) GetPatientById(patientID int) (domain.Patient, error) {
-	query := `
-		SELECT id, surname, name, patronymic, email, polic, is_deleted
-		FROM patients 
-		WHERE id=$1
-`
+	query := `SELECT id, surname, name, patronymic, email, polic, is_deleted FROM patients WHERE id=$1`
 	var patient domain.Patient
 	var surname, name, patronymic sql.NullString
 	err := s.connection.QueryRow(context.Background(), query, patientID).Scan(

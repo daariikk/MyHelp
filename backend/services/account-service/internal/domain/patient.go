@@ -22,3 +22,32 @@ type PatientDTO struct {
 	IsDeleted    bool             `json:"is_deleted"`
 	Appointments []AppointmentDTO `json:"appointments"`
 }
+
+func NewPatient(id int, surname, name, patronymic, polic, email, password string, isDeleted bool) *Patient {
+	return &Patient{
+		Id:         id,
+		Surname:    surname,
+		Name:       name,
+		Patronymic: patronymic,
+		Polic:      polic,
+		Email:      email,
+		Password:   password,
+		IsDeleted:  isDeleted,
+	}
+}
+
+func NewPatientDTO(
+	id int, surname, name, patronymic, polic, email, password string, isDeleted bool, appointments []AppointmentDTO,
+) *PatientDTO {
+	return &PatientDTO{
+		Id:           id,
+		Surname:      surname,
+		Name:         name,
+		Patronymic:   patronymic,
+		Polic:        polic,
+		Email:        email,
+		Password:     password,
+		IsDeleted:    isDeleted,
+		Appointments: appointments,
+	}
+}

@@ -28,3 +28,27 @@ type AppointmentDTO struct {
 	Status               string  `json:"status"`
 	Rating               float64 `json:"rating"`
 }
+
+func NewAppointment(id int, doctorFIO, doctorSpec string, date, timeVal time.Time, status string, rating float64) *Appointment {
+	return &Appointment{
+		Id:                   id,
+		DoctorFIO:            doctorFIO,
+		DoctorSpecialization: doctorSpec,
+		Date:                 date,
+		Time:                 timeVal,
+		Status:               status,
+		Rating:               rating,
+	}
+}
+
+func NewAppointmentDTO(id int, doctorFIO, doctorSpec, date, timeStr, status string, rating float64) *AppointmentDTO {
+	return &AppointmentDTO{
+		Id:                   id,
+		DoctorFIO:            doctorFIO,
+		DoctorSpecialization: doctorSpec,
+		Date:                 date,
+		Time:                 timeStr,
+		Status:               status,
+		Rating:               rating,
+	}
+}

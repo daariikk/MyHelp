@@ -18,7 +18,11 @@ func DeletePatientHandler(logger *slog.Logger, wrapper DeletePatientWrapper) fun
 
 		patientIDStr := r.URL.Query().Get("patientID")
 		patientID, err := strconv.ParseInt(patientIDStr, 10, 64)
-
+		if err != nil {
+			logger.Debug("invalid patientID", "error", err)
+			response.SendFailureResponse(w, "Invalid patientID", http.StatusBadRequest)
+			return
+		}
 		logger.Debug("Handling DELETE patient request for patient", "patientID", patientID)
 
 		isDeleted, err := wrapper.DeletePatientById(int(patientID))
