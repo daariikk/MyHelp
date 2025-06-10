@@ -35,7 +35,7 @@ func NewDoctorHandler(logger *slog.Logger, wrapper ControlDoctorsWrapper) func(h
 			return
 		}
 
-		logger.Debug("newDoctor", newDoctor)
+		//logger.Debug("newDoctor", newDoctor)
 
 		doctor, err := wrapper.NewDoctor(newDoctor)
 		if err != nil {
@@ -141,12 +141,13 @@ func GetScheduleDoctorByIdHandler(logger *slog.Logger, wrapper ControlDoctorsWra
 func NewScheduleHandler(logger *slog.Logger, wrapperDB ControlDoctorsWrapper, wrapper use_cases.NewScheduleWrapper) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info("NewScheduleHandler starting...")
-		logger.Debug("URL", r.URL)
+		// logger.Debug("URL", r.URL)
 		doctorIDStr := chi.URLParam(r, "doctorID")
 		doctorID, err := strconv.ParseInt(doctorIDStr, 10, 64)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse doctorID: %e", err))
 			response.SendFailureResponse(w, "Error parse doctorID", http.StatusBadRequest)
+			return
 		}
 
 		dateStr := r.URL.Query().Get("date")
@@ -154,12 +155,14 @@ func NewScheduleHandler(logger *slog.Logger, wrapperDB ControlDoctorsWrapper, wr
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse date: %e", err))
 			response.SendFailureResponse(w, "Error parse date", http.StatusBadRequest)
+			return
 		}
 		startTimeStr := r.URL.Query().Get("start_time")
 		startTime, err := time.Parse("15:04:05", startTimeStr)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse start_time: %e", err))
 			response.SendFailureResponse(w, "Error parse start_time", http.StatusBadRequest)
+			return
 		}
 
 		endTimeStr := r.URL.Query().Get("end_time")
@@ -167,6 +170,7 @@ func NewScheduleHandler(logger *slog.Logger, wrapperDB ControlDoctorsWrapper, wr
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse end_time: %e", err))
 			response.SendFailureResponse(w, "Error parse end_time", http.StatusBadRequest)
+			return
 		}
 
 		receptionTimeStr := r.URL.Query().Get("reception_time")
@@ -174,18 +178,21 @@ func NewScheduleHandler(logger *slog.Logger, wrapperDB ControlDoctorsWrapper, wr
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error parse reception_time: %e", err))
 			response.SendFailureResponse(w, "Error parse reception_time", http.StatusBadRequest)
+			return
 		}
 
 		newSchedule, err := wrapper.CreateScheduleForDoctorById(int(doctorID), date, startTime, endTime, int(receptionTime))
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error create doctor schedule: %e", err))
 			response.SendFailureResponse(w, "Error create doctor schedule", http.StatusInternalServerError)
+			return
 		}
 
 		err = wrapperDB.CreateNewScheduleForDoctor(int(doctorID), newSchedule.Records)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error create doctor schedule: %e", err))
 			response.SendFailureResponse(w, "Error create doctor schedule", http.StatusInternalServerError)
+			return
 		}
 
 		response.SendSuccessResponse(w, newSchedule, http.StatusOK)

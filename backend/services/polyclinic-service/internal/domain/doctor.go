@@ -11,3 +11,27 @@ type Doctor struct {
 	Rating         float64 `json:"rating"`
 	PhotoPath      string  `json:"photo"`
 }
+
+func NewDoctor(
+	id int,
+	surname string,
+	name string,
+	patronymic string,
+	specialization string,
+	education string,
+	progress string,
+	rating float64,
+	photoPath string,
+) Doctor {
+	return Doctor{
+		Id:             id,
+		Surname:        surname,
+		Name:           name,
+		Patronymic:     patronymic,
+		Specialization: specialization,
+		Education:      education,
+		Progress:       progress,
+		Rating:         rating,
+		PhotoPath:      photoPath,
+	}
+}

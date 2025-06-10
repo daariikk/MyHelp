@@ -6,3 +6,12 @@ type Specialization struct {
 	SpecializationDoctor string `json:"specialization_doctor"`
 	Description          string `json:"description"`
 }
+
+func NewSpecialization(id int, specialization, specializationDoctor, description string) Specialization {
+	return Specialization{
+		ID:                   id,
+		Specialization:       specialization,
+		SpecializationDoctor: specializationDoctor,
+		Description:          description,
+	}
+}
