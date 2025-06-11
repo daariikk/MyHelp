@@ -22,7 +22,7 @@ func RegisterHandler(logger *slog.Logger, register RegisterWrapper) func(http.Re
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-		logger.Debug("request: ", request)
+		// logger.Debug("request: ", request)
 
 		// Проверяем обязательные поля
 		if request.Email == "" {

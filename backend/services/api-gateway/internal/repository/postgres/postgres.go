@@ -6,12 +6,20 @@ import (
 	"github.com/daariikk/MyHelp/services/api-gateway/internal/domain"
 	"github.com/daariikk/MyHelp/services/api-gateway/internal/repository"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"log/slog"
 )
 
+type pgxConn interface {
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+	Close(ctx context.Context) error
+}
+
 type Storage struct {
-	connection *pgx.Conn
+	connection pgxConn
 	logger     *slog.Logger
 }
 

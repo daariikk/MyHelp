@@ -18,3 +18,26 @@ type Admin struct {
 	Password string `json:"password"`
 	IsActive bool   `json:"isActive"`
 }
+
+func NewUser(id int, surname, name, patronymic, polic, email, password string, isDeleted bool) *User {
+	return &User{
+		Id:         id,
+		Surname:    surname,
+		Name:       name,
+		Patronymic: patronymic,
+		Polic:      polic,
+		Email:      email,
+		Password:   password,
+		IsDeleted:  isDeleted,
+	}
+}
+
+func NewAdmin(id int, username, email, password string, isActive bool) *Admin {
+	return &Admin{
+		Id:       id,
+		Username: username,
+		Email:    email,
+		Password: password,
+		IsActive: isActive,
+	}
+}

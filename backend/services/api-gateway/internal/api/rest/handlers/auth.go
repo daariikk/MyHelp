@@ -195,7 +195,7 @@ func LoginAdminHandler(logger *slog.Logger, auth LoginWrapper, cfg *config.Confi
 			"refresh_lifetime": time.Now().Add(refreshLifetime).Format(time.RFC3339),
 		}
 
-		logger.Debug("Сформированный ответ", res)
+		// logger.Debug("Сформированный ответ", res)
 
 		logger.Info("LoginHandler works successful")
 		response.SendSuccessResponse(w, res, http.StatusOK)

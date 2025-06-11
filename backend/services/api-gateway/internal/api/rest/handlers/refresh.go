@@ -21,7 +21,7 @@ func RefreshHandler(logger *slog.Logger, cfg *config.Config) func(http.ResponseW
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-		logger.Debug("request: ", request)
+		// logger.Debug("request: ", request)
 
 		newAccessToken, err := refreshAccessToken(cfg, request.RefreshToken)
 		if err != nil {
