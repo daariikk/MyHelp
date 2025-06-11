@@ -13,7 +13,7 @@ jwt:
   refresh_secret_key: "2OftbBo?n0!6w9S09r-PMUe8Qf9VoL9yfZ2JhswWElxx2MBihNS0edL8oV??IRO/qKSsTrxGKisRMO/6xGZvJMDRIr-1w5Ybjg8YFXJ/x79d/OU=VKTC/G/kKdGFcLbl5jncVty1L71KuHpzz3k6nxv=7UJVk2SXoirI?s630Vz3oZgv5tuBF6ZjG1akSPdPoAW9NWm6tunwQjTs4YUts1QT79/c6wqu69QEIM!R/DI7Tf!w0!4uxw/lmVXF-lAi"
 
 services:
-  appointment_service: "http://localhost:8081"
+  appointment_service: "http://localhost:8085"
   account_service: "http://localhost:8083"
   polyclinic_service: "http://localhost:8084"
 

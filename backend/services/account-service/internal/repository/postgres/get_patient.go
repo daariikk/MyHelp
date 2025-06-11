@@ -91,7 +91,17 @@ func (s *Storage) GetAppointmentByPatientId(patientID int) ([]domain.Appointment
         UPDATE appointments
         SET status_id = $2
         WHERE patient_id = $1
-        AND (date < CURRENT_DATE OR (date = CURRENT_DATE AND time < CURRENT_TIME))
+        AND (
+			-- Записи с прошлыми датами
+			date < CURRENT_DATE
+			OR
+			-- Записи с сегодняшней датой, но прошедшим временем
+			(
+				date = CURRENT_DATE 
+				AND time < CURRENT_TIME
+				AND status_id = 1  -- Только записи со статусом "Запланировано" (1)
+			)
+		)
         AND status_id NOT IN (2, 3)  -- Не обновляем уже завершенные или отмененные
     `
 
@@ -160,6 +170,5 @@ func (s *Storage) GetAppointmentByPatientId(patientID int) ([]domain.Appointment
 		s.logger.Error("Error iterating rows", "error", err)
 		return nil, fmt.Errorf("error iterating rows: %w", err)
 	}
-
 	return appointments, nil
 }

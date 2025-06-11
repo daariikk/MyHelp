@@ -28,6 +28,7 @@ func DeleteAppointment(logger *slog.Logger, cfg *config.Config) http.HandlerFunc
 	return func(w http.ResponseWriter, r *http.Request) {
 		appointmentIDStr := chi.URLParam(r, "appointmentID")
 		url := fmt.Sprintf("%s/MyHelp/schedule/appointments/%s", cfg.Services.AppointmentService, appointmentIDStr)
+		logger.Debug(url, url)
 		helper.ForwardRequest(logger, w, r, url, "DELETE")
 	}
 }

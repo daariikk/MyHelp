@@ -5,8 +5,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pingvin
       POSTGRES_DB: myhelp
+      TZ: Europe/Moscow
+
     ports:
       - "5432:5432"
+
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -30,6 +36,9 @@ services:
       - "8083:8083"
     depends_on:
       - migrate
+
+    environment:
+      TZ: Europe/Moscow
 
   appointment-service:
     build:

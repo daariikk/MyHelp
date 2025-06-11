@@ -1,5 +1,5 @@
 INSERT INTO patients (surname, name, patronymic, email, polic, password) VALUES
-('Соколов', 'Алексей', 'Иванович', 'alexey.sokolov@example.com', '1234567890', 'password1'),
+('Соколов', 'Алексей', 'Иванович', 'alexey.sokolov@example.com', '1234567890', '$2b$10$ybYck.EA5Y465s5.egkZy.8AWX4tGt2xDT8lsvTcc.MODFs3DpXOm'),
 ('Михайлова', 'Екатерина', 'Сергеевна', 'ekaterina.mikhailova@example.com', '0987654321', 'password2'),
 ('Козлов', 'Дмитрий', 'Андреевич', 'dmitry.kozlov@example.com', '1122334455', 'password3'),
 ('Павлова', 'Ольга', 'Николаевна', 'olga.pavlova@example.com', '5566778899', 'password4'),
